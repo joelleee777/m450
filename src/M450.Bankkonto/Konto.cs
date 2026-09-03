@@ -1,21 +1,16 @@
 namespace M450.Bankkonto;
 
 /// <summary>
-/// Repräsentiert ein Bankkonto mit einfacher, täglich berechneter Verzinsung.
-/// Die Zinssätze werden als Prozentwerte angegeben (zum Beispiel 1.5 für 1,5 %).
+/// Basisklasse für alle Kontoarten. Regelt Einzahlen, Beziehen, Transfer,
+/// Zins und Abschluss. Wie viel überzogen werden darf, legt jede Unterklasse
+/// selbst fest.
 /// </summary>
-public sealed class Bankkonto
+public abstract class Konto
 {
     private const int BankjahrInTagen = 360;
     private static long _letzteKontoNummer = 100_000;
 
-    /// <summary>
-    /// Erstellt ein neues Konto mit einer automatisch vergebenen Kontonummer.
-    /// </summary>
-    /// <param name="aktivZins">Jährlicher Habenzins in Prozent.</param>
-    /// <param name="passivZins">Jährlicher Sollzins in Prozent.</param>
-    /// <param name="startGuthaben">Anfänglicher Kontostand.</param>
-    public Bankkonto(
+    protected Konto(
         decimal aktivZins,
         decimal passivZins,
         decimal startGuthaben = 0m)
@@ -29,53 +24,31 @@ public sealed class Bankkonto
         Guthaben = startGuthaben;
     }
 
-    /// <summary>
-    /// Eindeutige, nach dem Erstellen nicht mehr veränderbare Kontonummer.
-    /// </summary>
     public long KontoNummer { get; }
 
-    /// <summary>
-    /// Aktueller Kontostand. Er kann nur durch Kontooperationen verändert werden.
-    /// </summary>
     public decimal Guthaben { get; private set; }
 
-    /// <summary>
-    /// Jährlicher Habenzins in Prozent.
-    /// </summary>
     public decimal AktivZins { get; }
 
-    /// <summary>
-    /// Jährlicher Sollzins in Prozent.
-    /// </summary>
     public decimal PassivZins { get; }
 
-    /// <summary>
-    /// Seit dem letzten Abschluss aufgelaufener, noch nicht verbuchter Zins.
-    /// </summary>
     public decimal AufgelaufenerZins { get; private set; }
 
-    /// <summary>
-    /// Zahlt einen positiven Betrag auf das Konto ein.
-    /// </summary>
     public void ZahleEin(decimal betrag)
     {
         StellePositivenBetragSicher(betrag);
         Guthaben += betrag;
     }
 
-    /// <summary>
-    /// Bezieht einen positiven Betrag. Eine Überziehung ist zulässig.
-    /// </summary>
     public void Beziehe(decimal betrag)
     {
         StellePositivenBetragSicher(betrag);
-        Guthaben -= betrag;
+        var neuesGuthaben = Guthaben - betrag;
+        PruefeBezugErlaubt(betrag, neuesGuthaben);
+        Guthaben = neuesGuthaben;
     }
 
-    /// <summary>
-    /// Überweist einen positiven Betrag auf ein anderes Konto.
-    /// </summary>
-    public void Transferiere(Bankkonto konto, decimal betrag)
+    public void Transferiere(Konto konto, decimal betrag)
     {
         ArgumentNullException.ThrowIfNull(konto);
         StellePositivenBetragSicher(betrag);
@@ -91,10 +64,6 @@ public sealed class Bankkonto
         konto.ZahleEin(betrag);
     }
 
-    /// <summary>
-    /// Berechnet den Zins für die angegebene Anzahl Tage nach der 360-Tage-Methode.
-    /// Der Zins wird separat gesammelt und noch nicht dem Guthaben zugeschlagen.
-    /// </summary>
     public void SchreibeZinsGut(int anzTage)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(anzTage);
@@ -104,14 +73,18 @@ public sealed class Bankkonto
             / (100m * BankjahrInTagen);
     }
 
-    /// <summary>
-    /// Verbucht den aufgelaufenen Zins und beginnt eine neue Zinsperiode.
-    /// </summary>
     public void SchliesseKontoAb()
     {
         Guthaben += AufgelaufenerZins;
         AufgelaufenerZins = 0m;
     }
+
+    /// <summary>
+    /// Prüft, ob ein Bezug erlaubt ist. <paramref name="neuesGuthaben"/> ist der
+    /// Kontostand nach dem Bezug. Wenn die Regel verletzt wird, wirft die Methode
+    /// eine Exception.
+    /// </summary>
+    protected abstract void PruefeBezugErlaubt(decimal betrag, decimal neuesGuthaben);
 
     private static void StellePositivenBetragSicher(decimal betrag)
     {

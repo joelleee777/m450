@@ -1,8 +1,6 @@
-using Konto = M450.Bankkonto.Bankkonto;
-
 namespace M450.Bankkonto.Tests;
 
-public sealed class BankkontoTests
+public sealed class KontoTests
 {
     [Fact]
     public void Konstruktor_ErstelltKontenMitEindeutigenNummern()
@@ -31,7 +29,23 @@ public sealed class BankkontoTests
     }
 
     [Fact]
-    public void Beziehe_MehrAlsGuthaben_ErlaubtUeberziehung()
+    public void Beziehe_ErlaubterBetrag_ReduziertGuthabenDirekt()
+    {
+        // Arrange
+        var konto = NeuesKonto(startGuthaben: 100m);
+
+        // Act
+        konto.Beziehe(40m);
+
+        // Assert
+        Assert.Equal(60m, konto.Guthaben);
+    }
+
+    // TestKonto erlaubt absichtlich jeden Bezug, auch ins Minus. So lässt sich
+    // die Basislogik von Konto testen, unabhängig von den Regeln einzelner
+    // Kontoarten wie Sparkonto oder Jugendkonto.
+    [Fact]
+    public void Beziehe_MehrAlsGuthaben_ErlaubtUeberziehungBeiRegelfreiemKonto()
     {
         // Arrange
         var konto = NeuesKonto(startGuthaben: 100m);
@@ -157,8 +171,8 @@ public sealed class BankkontoTests
         // Arrange
 
         // Act
-        var aktivZinsException = Record.Exception(() => new Konto(-0.1m, 5m));
-        var passivZinsException = Record.Exception(() => new Konto(1m, -0.1m));
+        var aktivZinsException = Record.Exception(() => new TestKonto(-0.1m, 5m));
+        var passivZinsException = Record.Exception(() => new TestKonto(1m, -0.1m));
 
         // Assert
         Assert.IsType<ArgumentOutOfRangeException>(aktivZinsException);
@@ -210,14 +224,13 @@ public sealed class BankkontoTests
         Assert.Equal(0m, konto.AufgelaufenerZins);
     }
 
-    // Diese Hilfsmethode vermeidet wiederholte Konstruktoraufrufe mit denselben
-    // Standardwerten. Einzelne Tests können benötigte Werte über benannte Parameter
-    // gezielt ändern und ihr Arrange-Abschnitt bleibt kurz und gut lesbar.
-    private static Konto NeuesKonto(
+    // Hilfsmethode mit Standardwerten, damit Tests nicht jedes Mal alle
+    // Parameter angeben müssen.
+    private static TestKonto NeuesKonto(
         decimal aktivZins = 1.5m,
         decimal passivZins = 5m,
         decimal startGuthaben = 0m)
     {
-        return new Konto(aktivZins, passivZins, startGuthaben);
+        return new TestKonto(aktivZins, passivZins, startGuthaben);
     }
 }
