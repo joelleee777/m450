@@ -9,8 +9,9 @@ public sealed class Jugendkonto : Konto
     public Jugendkonto(
         decimal aktivZins,
         decimal passivZins,
-        decimal startGuthaben = 0m)
-        : base(aktivZins, passivZins, startGuthaben)
+        decimal startGuthaben = 0m,
+        KontoStatus status = KontoStatus.Standard)
+        : base(aktivZins, passivZins, startGuthaben, status)
     {
     }
 

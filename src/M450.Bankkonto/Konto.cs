@@ -13,7 +13,8 @@ public abstract class Konto
     protected Konto(
         decimal aktivZins,
         decimal passivZins,
-        decimal startGuthaben = 0m)
+        decimal startGuthaben = 0m,
+        KontoStatus status = KontoStatus.Standard)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(aktivZins);
         ArgumentOutOfRangeException.ThrowIfNegative(passivZins);
@@ -22,6 +23,7 @@ public abstract class Konto
         AktivZins = aktivZins;
         PassivZins = passivZins;
         Guthaben = startGuthaben;
+        Status = status;
     }
 
     public long KontoNummer { get; }
@@ -31,6 +33,8 @@ public abstract class Konto
     public decimal AktivZins { get; }
 
     public decimal PassivZins { get; }
+
+    public KontoStatus Status { get; }
 
     public decimal AufgelaufenerZins { get; private set; }
 
@@ -68,9 +72,36 @@ public abstract class Konto
     {
         ArgumentOutOfRangeException.ThrowIfNegative(anzTage);
 
-        var zinsSatz = Guthaben >= 0m ? AktivZins : PassivZins;
+        var zinsSatz = Guthaben >= 0m ? ErmittleEffektivenAktivZins() : PassivZins;
         AufgelaufenerZins += Guthaben * zinsSatz * anzTage
             / (100m * BankjahrInTagen);
+    }
+
+    /// <summary>
+    /// Ermittelt den effektiven Aktivzins anhand von Guthabenstufen und
+    /// Status. Ab CHF 100'000 ist keine Geschäftsregel definiert.
+    /// </summary>
+    private decimal ErmittleEffektivenAktivZins()
+    {
+        if (Guthaben < 10_000m)
+        {
+            return AktivZins;
+        }
+
+        if (Guthaben < 50_000m)
+        {
+            return AktivZins + 0.5m;
+        }
+
+        if (Guthaben < 100_000m)
+        {
+            return Status == KontoStatus.VIP
+                ? AktivZins + 1.5m
+                : AktivZins + 0.75m;
+        }
+
+        throw new InvalidOperationException(
+            "Für Guthaben ab CHF 100'000 ist kein Zinssatz definiert.");
     }
 
     public void SchliesseKontoAb()

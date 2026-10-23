@@ -9,8 +9,9 @@ internal sealed class TestKonto : Konto
     public TestKonto(
         decimal aktivZins,
         decimal passivZins,
-        decimal startGuthaben = 0m)
-        : base(aktivZins, passivZins, startGuthaben)
+        decimal startGuthaben = 0m,
+        KontoStatus status = KontoStatus.Standard)
+        : base(aktivZins, passivZins, startGuthaben, status)
     {
     }
 
