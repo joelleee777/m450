@@ -2,100 +2,93 @@ using Moq;
 
 namespace TestDoublesExercise.Tests;
 
-// Dieses Lagerbestandsbeispiel ist unabhängig von der Reservierungsaufgabe.
-// Es zeigt lauffähig, wie ein selbst geschriebener Stub, ein selbst
-// geschriebener Spy und Moq eingesetzt werden. Übertragt die Ideen auf
-// ReservationService in ReservationServiceTests.cs.
-
-public interface IStockLevel
+// Kleines, unabhängiges Beispiel. Für die Reservierungsaufgabe schreibt ihr eigene Doubles.
+public interface IStockReader
 {
-    int GetStock(string articleCode);
+    int GetStock(string productCode);
 }
 
-public interface IStockMovementLog
+public interface IOrderNotifier
 {
-    void Record(string articleCode, int delta);
+    void Notify(string productCode);
 }
 
-public sealed class WarehouseService(IStockLevel stock, IStockMovementLog log)
+public sealed class StockCheckService(IStockReader stockReader, IOrderNotifier notifier)
 {
-    public bool TryTakeOut(string articleCode, int amount)
+    public bool TryOrder(string productCode)
     {
-        if (stock.GetStock(articleCode) < amount)
+        if (stockReader.GetStock(productCode) <= 0)
         {
             return false;
         }
 
-        log.Record(articleCode, -amount);
+        notifier.Notify(productCode);
         return true;
     }
 }
 
-public sealed class TestDoubleExamplesTests
+public sealed class TestDoubleExamples
 {
-    // Handgeschriebener Stub: liefert für einen festgelegten Artikel einen
-    // festen Lagerbestand. Ein Stub liefert Daten für den Test, mehr nicht.
-    private sealed class StockLevelStub(string articleCode, int stock) : IStockLevel
-    {
-        public int GetStock(string code) => code == articleCode ? stock : 0;
-    }
-
-    // Handgeschriebener Spy: zeichnet jeden Aufruf mitsamt Argumenten auf,
-    // damit der Test danach prüfen kann, was passiert ist.
-    private sealed class StockMovementLogSpy : IStockMovementLog
-    {
-        public List<(string ArticleCode, int Delta)> Calls { get; } = [];
-
-        public void Record(string articleCode, int delta) => Calls.Add((articleCode, delta));
-    }
-
     [Fact]
-    public void TryTakeOut_GenugLagerbestand_GibtTrueZurueckUndProtokolliertBewegung()
+    public void HandwrittenStub_ControlsTheStockResponse()
     {
-        // Arrange
-        var stock = new StockLevelStub(articleCode: "ART-1", stock: 5);
-        var log = new StockMovementLogSpy();
-        var warehouse = new WarehouseService(stock, log);
+        // Arrange: Der Stub liefert den Wert, den dieser Test braucht.
+        var stock = new FixedStockStub(0);
+        var notifier = new RecordingOrderSpy();
+        var service = new StockCheckService(stock, notifier);
 
         // Act
-        var result = warehouse.TryTakeOut("ART-1", 3);
-
-        // Assert
-        Assert.True(result);
-        var call = Assert.Single(log.Calls);
-        Assert.Equal(("ART-1", -3), call);
-    }
-
-    [Fact]
-    public void TryTakeOut_ZuWenigLagerbestand_GibtFalseZurueckUndProtokolliertNichts()
-    {
-        // Arrange
-        var stock = new StockLevelStub(articleCode: "ART-1", stock: 2);
-        var log = new StockMovementLogSpy();
-        var warehouse = new WarehouseService(stock, log);
-
-        // Act
-        var result = warehouse.TryTakeOut("ART-1", 3);
+        var result = service.TryOrder("BOOK-1");
 
         // Assert
         Assert.False(result);
-        Assert.Empty(log.Calls);
+        Assert.Empty(notifier.NotifiedProductCodes);
     }
 
     [Fact]
-    public void TryTakeOut_MitMoq_GibtTrueZurueckUndRuftRecordGenauEinmalMitErwartetenArgumentenAuf()
+    public void HandwrittenSpy_RecordsTheNotification()
     {
-        // Arrange
-        var stockMock = new Mock<IStockLevel>();
-        stockMock.Setup(s => s.GetStock("ART-1")).Returns(5);
-        var logMock = new Mock<IStockMovementLog>();
-        var warehouse = new WarehouseService(stockMock.Object, logMock.Object);
+        // Arrange: Der Spy sammelt Aufrufe, statt eine echte Nachricht zu senden.
+        var notifier = new RecordingOrderSpy();
+        var service = new StockCheckService(new FixedStockStub(2), notifier);
 
         // Act
-        var result = warehouse.TryTakeOut("ART-1", 3);
+        var result = service.TryOrder("BOOK-1");
 
         // Assert
         Assert.True(result);
-        logMock.Verify(l => l.Record("ART-1", -3), Times.Once());
+        Assert.Equal("BOOK-1", Assert.Single(notifier.NotifiedProductCodes));
+    }
+
+    [Fact]
+    public void Moq_ConfiguresAndVerifiesTheStockReader()
+    {
+        // Arrange: Moq liefert einen Wert und zeichnet den Methodenaufruf auf.
+        var stock = new Mock<IStockReader>();
+        stock.Setup(reader => reader.GetStock("BOOK-1")).Returns(2);
+        var notifier = new RecordingOrderSpy();
+        var service = new StockCheckService(stock.Object, notifier);
+
+        // Act
+        var result = service.TryOrder("BOOK-1");
+
+        // Assert
+        Assert.True(result);
+        stock.Verify(reader => reader.GetStock("BOOK-1"), Times.Once());
+        Assert.Equal("BOOK-1", Assert.Single(notifier.NotifiedProductCodes));
+    }
+
+    private sealed class FixedStockStub(int availableItems) : IStockReader
+    {
+        public int GetStock(string productCode) => availableItems;
+    }
+
+    private sealed class RecordingOrderSpy : IOrderNotifier
+    {
+        private readonly List<string> _notifiedProductCodes = [];
+
+        public IReadOnlyList<string> NotifiedProductCodes => _notifiedProductCodes;
+
+        public void Notify(string productCode) => _notifiedProductCodes.Add(productCode);
     }
 }
