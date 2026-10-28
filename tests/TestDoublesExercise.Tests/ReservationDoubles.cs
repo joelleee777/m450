@@ -5,9 +5,16 @@ namespace TestDoublesExercise.Tests;
 
 public class ReservationRepositoryStub : IReservationRepository
 {
+    private readonly bool _saveResult;
+
+    public ReservationRepositoryStub(bool saveResult = true)
+    {
+        _saveResult = saveResult;
+    }
+
     public bool TrySave(Reservation reservation)
     {
-        return true;
+        return _saveResult;
     }
 }
 
