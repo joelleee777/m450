@@ -11,6 +11,9 @@ public interface ISeatAvailability
 public interface IReservationRepository
 {
     bool TrySave(Reservation reservation);
+
+    // Speichert alle Reservierungen atomar: entweder alle oder keine.
+    bool TrySaveBatch(IReadOnlyList<Reservation> reservations);
 }
 
 public interface IConfirmationSender
@@ -53,6 +56,47 @@ public sealed class ReservationService
         }
 
         _sender.Send(reservation);
+        return true;
+    }
+
+    public bool ReserveBatch(IReadOnlyList<Reservation> requests)
+    {
+        ArgumentNullException.ThrowIfNull(requests);
+        if (requests.Count == 0)
+        {
+            throw new ArgumentException("Mindestens eine Reservierung ist erforderlich.", nameof(requests));
+        }
+
+        foreach (var request in requests)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(request.CustomerEmail);
+            ArgumentException.ThrowIfNullOrWhiteSpace(request.EventCode);
+            ArgumentOutOfRangeException.ThrowIfNegativeOrZero(request.SeatCount);
+        }
+
+        var requestedSeatsByEvent = requests
+            .GroupBy(request => request.EventCode)
+            .ToDictionary(group => group.Key, group => group.Sum(request => request.SeatCount));
+
+        var hasEnoughSeatsEverywhere = true;
+        foreach (var (eventCode, requestedSeats) in requestedSeatsByEvent)
+        {
+            if (_availability.GetAvailableSeats(eventCode) < requestedSeats)
+            {
+                hasEnoughSeatsEverywhere = false;
+            }
+        }
+
+        if (!hasEnoughSeatsEverywhere || !_repository.TrySaveBatch(requests))
+        {
+            return false;
+        }
+
+        foreach (var request in requests)
+        {
+            _sender.Send(request);
+        }
+
         return true;
     }
 }
