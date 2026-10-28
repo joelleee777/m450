@@ -19,8 +19,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestDoublesExercise", "src\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestDoublesExercise.Tests", "tests\TestDoublesExercise.Tests\TestDoublesExercise.Tests.csproj", "{6B3B287A-5AAD-4398-9360-E427E211A5E7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestDoublesExercise.MSTest.Tests", "tests\TestDoublesExercise.MSTest.Tests\TestDoublesExercise.MSTest.Tests.csproj", "{919F8FE1-92A1-45DA-BBA1-C2435DDF89A1}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -103,18 +101,6 @@ Global
 		{6B3B287A-5AAD-4398-9360-E427E211A5E7}.Release|x64.Build.0 = Release|Any CPU
 		{6B3B287A-5AAD-4398-9360-E427E211A5E7}.Release|x86.ActiveCfg = Release|Any CPU
 		{6B3B287A-5AAD-4398-9360-E427E211A5E7}.Release|x86.Build.0 = Release|Any CPU
-		{919F8FE1-92A1-45DA-BBA1-C2435DDF89A1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{919F8FE1-92A1-45DA-BBA1-C2435DDF89A1}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{919F8FE1-92A1-45DA-BBA1-C2435DDF89A1}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{919F8FE1-92A1-45DA-BBA1-C2435DDF89A1}.Debug|x64.Build.0 = Debug|Any CPU
-		{919F8FE1-92A1-45DA-BBA1-C2435DDF89A1}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{919F8FE1-92A1-45DA-BBA1-C2435DDF89A1}.Debug|x86.Build.0 = Debug|Any CPU
-		{919F8FE1-92A1-45DA-BBA1-C2435DDF89A1}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{919F8FE1-92A1-45DA-BBA1-C2435DDF89A1}.Release|Any CPU.Build.0 = Release|Any CPU
-		{919F8FE1-92A1-45DA-BBA1-C2435DDF89A1}.Release|x64.ActiveCfg = Release|Any CPU
-		{919F8FE1-92A1-45DA-BBA1-C2435DDF89A1}.Release|x64.Build.0 = Release|Any CPU
-		{919F8FE1-92A1-45DA-BBA1-C2435DDF89A1}.Release|x86.ActiveCfg = Release|Any CPU
-		{919F8FE1-92A1-45DA-BBA1-C2435DDF89A1}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -126,6 +112,5 @@ Global
 		{3C14B9F6-6642-431E-91EE-17F73E2C90E9} = {A9D6BEB7-E311-4175-AD84-26B86C195183}
 		{3E47DCED-A7EB-446D-A83E-DBCE1F777FE3} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{6B3B287A-5AAD-4398-9360-E427E211A5E7} = {A9D6BEB7-E311-4175-AD84-26B86C195183}
-		{919F8FE1-92A1-45DA-BBA1-C2435DDF89A1} = {A9D6BEB7-E311-4175-AD84-26B86C195183}
 	EndGlobalSection
 EndGlobal
